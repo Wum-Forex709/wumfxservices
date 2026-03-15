@@ -1,3 +1,4 @@
+const API = 'https://backend-production-93d4.up.railway.app';
 /* app.js — Knight Traders Landing Page */
 
 /* ── MOBILE MENU GLOBAL (called from inline onclick) ── */
