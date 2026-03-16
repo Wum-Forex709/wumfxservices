@@ -13,12 +13,30 @@ app.set('trust proxy', 1); // Railway ke liye zaroori
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors({
-  origin: 'https://wumfxaiservices.netlify.app',
+  origin: [
+    'https://wumfxaiservices.netlify.app',
+    'https://wumfxaiiservices.netlify.app',
+    'http://localhost:5173',
+    'http://localhost:3000'
+  ],
   credentials: true
 }));
 
+// Health check route - YEH ADD KAREIN
+app.get('/health', (req, res) => {
+  res.json({ 
+    status: 'OK', 
+    message: 'Knight Traders Backend Running',
+    timestamp: new Date().toISOString()
+  });
+});
+
+const limiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 500 });
+// ... baaki code same
+
 const limiter          = rateLimit({ windowMs: 15 * 60 * 1000, max: 500 });
 const authLimiter      = rateLimit({ windowMs: 15 * 60 * 1000, max: 20 });
+
 const communityLimiter = rateLimit({ windowMs: 1 * 60 * 1000, max: 60 }); // 60 req/min for chat
 app.use('/api/', limiter);
 app.use('/api/auth/', authLimiter);
