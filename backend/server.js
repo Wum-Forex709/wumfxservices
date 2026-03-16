@@ -1,7 +1,6 @@
 // server.js - Knight Traders Main Server
 require('dotenv').config();
 const express = require('express');
-const session = require('express-session');
 const cors    = require('cors');
 const path    = require('path');
 const rateLimit = require('express-rate-limit');
@@ -25,12 +24,7 @@ app.use('/api/', limiter);
 app.use('/api/auth/', authLimiter);
 app.use('/api/community/', communityLimiter);
 
-app.use(session({
-  secret: process.env.SESSION_SECRET || 'KnightTradersSecret2025',
-  resave: false,
-  saveUninitialized: false,
-  cookie: { secure: true, httpOnly: true, sameSite: 'none', maxAge: 7 * 24 * 60 * 60 * 1000 }
-}));
+// JWT auth — no session needed
 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
