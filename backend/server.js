@@ -9,20 +9,27 @@ const rateLimit = require('express-rate-limit');
 const app  = express();
 const PORT = process.env.PORT || 3000;
 
+app.set('trust proxy', 1); // Railway ke liye zaroori
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cors({ origin: true, credentials: true }));
+app.use(cors({
+  origin: 'https://wumfxaiservices.netlify.app',
+  credentials: true
+}));
 
-const limiter     = rateLimit({ windowMs: 15 * 60 * 1000, max: 200 });
-const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20 });
+const limiter          = rateLimit({ windowMs: 15 * 60 * 1000, max: 500 });
+const authLimiter      = rateLimit({ windowMs: 15 * 60 * 1000, max: 20 });
+const communityLimiter = rateLimit({ windowMs: 1 * 60 * 1000, max: 60 }); // 60 req/min for chat
 app.use('/api/', limiter);
 app.use('/api/auth/', authLimiter);
+app.use('/api/community/', communityLimiter);
 
 app.use(session({
   secret: process.env.SESSION_SECRET || 'KnightTradersSecret2025',
   resave: false,
   saveUninitialized: false,
-  cookie: { secure: false, httpOnly: true, maxAge: 7 * 24 * 60 * 60 * 1000 }
+  cookie: { secure: true, httpOnly: true, sameSite: 'none', maxAge: 7 * 24 * 60 * 60 * 1000 }
 }));
 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
