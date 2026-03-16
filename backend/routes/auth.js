@@ -3,6 +3,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const router = express.Router();
 const { getDB } = require('../database/db');
+const { signToken } = require('../middleware/auth');
 
 function generateMemberID() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -65,13 +66,11 @@ router.post('/signup', async (req, res) => {
     db.prepare(`INSERT INTO notifications (user_id, title, message, type) VALUES (?,?,?,?)`)
       .run(user.id, '🏰 Welcome to Knight Traders!', `Your Member ID is ${memberId}. Your referral link: ${process.env.SITE_URL || 'https://yoursite.com'}?ref=${memberId}`, 'success');
 
-    req.session.userId   = user.id;
-    req.session.memberId = user.member_id;
-    req.session.role     = user.role;
-
+    const token = signToken(user);
     res.json({
       success: true,
       message: 'Account created successfully!',
+      token,
       user: { id: user.id, member_id: user.member_id, full_name: user.full_name, email: user.email, phone: user.phone, status: user.status, ea_status: user.ea_status, role: user.role, referral_code: user.member_id }
     });
   } catch (err) {
@@ -94,13 +93,11 @@ router.post('/login', async (req, res) => {
     const match = await bcrypt.compare(password, user.password);
     if (!match) return res.json({ success: false, message: 'Invalid email or password.' });
 
-    req.session.userId   = user.id;
-    req.session.memberId = user.member_id;
-    req.session.role     = user.role;
-
+    const token = signToken(user);
     res.json({
       success: true,
       message: 'Login successful!',
+      token,
       user: { id: user.id, member_id: user.member_id, full_name: user.full_name, email: user.email, phone: user.phone, status: user.status, ea_status: user.ea_status, role: user.role }
     });
   } catch (err) {
@@ -111,11 +108,12 @@ router.post('/login', async (req, res) => {
 
 // POST /api/auth/logout
 router.post('/logout', (req, res) => {
-  req.session.destroy(() => res.json({ success: true }));
+  // JWT: client deletes token
+  res.json({ success: true });
 });
 
 // GET /api/auth/me
-router.get('/me', (req, res) => {
+router.get('/me', require('../middleware/auth').requireAuth, (req, res) => {
   if (!req.session.userId) return res.json({ success: false, message: 'Not logged in.' });
   const db   = getDB();
   const user = db.prepare('SELECT id, member_id, full_name, email, phone, status, ea_status, role, referral_code, referral_earnings, referred_by, created_at FROM users WHERE id = ?').get(req.session.userId);
